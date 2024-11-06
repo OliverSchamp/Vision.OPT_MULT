@@ -23,3 +23,11 @@ class PreprocessOutput:
     image_with_boxes: np.ndarray
     crop_bboxes: List[Bbox]
     class_midpoints: Dict[int, List[float]]
+
+class CompareDFOutput(BaseModel):
+    correct: int
+    incorrect: int
+    unanswered: int
+
+    def calculate_final_mark(self) -> float:
+        return (self.correct-self.incorrect)/(self.correct+self.incorrect+self.unanswered) * 100

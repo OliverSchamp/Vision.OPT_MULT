@@ -1,17 +1,17 @@
 # where the comparison between markscheme and 
 import pandas as pd
 from typing import List
+from ..interface import CompareDFOutput
 
 class CompareController:
 
     def __init__(self):
         pass
 
-    def compare_to_ms(self, ms_dfs: List[pd.Dataframe], ans_dfs: List[pd.Dataframe]):
+    def compare_to_ms(self, ms_dfs: List[pd.DataFrame], ans_dfs: List[pd.DataFrame]) -> CompareDFOutput:
         result_list = []
         for ms_single, ans_single in zip(ms_dfs, ans_dfs):
             result_list.append(self.compare_answers(ans_single, ms_single))
-            print(result_list[-1])
         
         correct_answers = 0
         unanswered = 0
@@ -20,9 +20,10 @@ class CompareController:
             correct_answers += result["consistent_rows"]
             unanswered += result["unanswered_rows"]
             wrong_answers += result["incorrect_rows"]
-        print(f"Total correct answers: {correct_answers}")
-        print(f"Total incorrect answers: {wrong_answers}")
-        print(f"Total questions: {correct_answers+unanswered+wrong_answers}")
+        
+        return CompareDFOutput(correct=correct_answers, incorrect=wrong_answers, unanswered=unanswered)
+
+
 
     def compare_answers(self, df1, df2):
         if df1.shape != df2.shape:

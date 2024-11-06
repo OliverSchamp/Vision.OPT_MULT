@@ -6,7 +6,7 @@ import numpy as np
 import easyocr
 from typing import List, Tuple, Dict
 from ..do_lines_intersect import do_lines_intersect
-from intersection import find_intersections
+from .intersection import find_intersections
 from olv_draw import draw_bbs, DrawParameters
 from PIL import Image, ImageDraw
 
@@ -29,6 +29,8 @@ class PreprocessingController:
         return output
 
     def preprocess_image(self, numpy_image: np.ndarray, to_filter: bool = True):
+        numpy_image = cv2.cvtColor(numpy_image, cv2.COLOR_BGR2GRAY)
+
         img_cropped = numpy_image[200:-200, 100:-100]
 
         reader = easyocr.Reader(['en'])  # 'en' is for English; you can add more languages
@@ -155,16 +157,16 @@ class PreprocessingController:
         # find the No. OCR coords
         horizontal_lines = [horizontal_line for horizontal_line in horizontal_lines if horizontal_line[1] > no_box_y_coord-70]
 
-        crop_bboxes, class_midpoints = find_intersections(horizontal_lines, vertical_lines)
+        crop_bboxes, class_midpoints = find_intersections(horizontal_lines, vertical_lines, h, w)
 
-        image_with_boxes = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
-        image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_GRAY2RGB))
+        image_pil = Image.fromarray(image_rgb)
         image_canvas = ImageDraw.Draw(image_pil)
         draw_parameters = DrawParameters(fill_color=None)
 
         draw_bbs(image_canvas, crop_bboxes, draw_parameters)
 
-        return PreprocessOutput(image=image, image_with_boxes=image_with_boxes, image_with_lines=image_with_lines, crop_bboxes=crop_bboxes, class_midpoints=class_midpoints)
+        return PreprocessOutput(image=image_rgb, image_with_boxes=np.array(image_pil), image_with_lines=image_with_lines, crop_bboxes=crop_bboxes, class_midpoints=class_midpoints)
 
 

@@ -22,7 +22,7 @@ def line_intersection(line1, line2):
     
     return None  # The intersection is outside the segment bounds
 
-def find_intersections(horizontal_lines: List[List[int]], vertical_lines: List[List[int]]) -> List[Bbox]:
+def find_intersections(horizontal_lines: List[List[int]], vertical_lines: List[List[int]], h:int, w:int) -> List[Bbox]:
     # sort both
     horizontal_lines.sort(key=lambda x: x[1])
     vertical_lines.sort(key= lambda x: x[0])

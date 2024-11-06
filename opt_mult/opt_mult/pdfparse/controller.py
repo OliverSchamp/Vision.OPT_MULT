@@ -1,19 +1,16 @@
 from pathlib import Path
-import fitz  # PyMuPDF
+from fitz import Document
 import numpy as np
 from PIL import Image
 
 from ..interface import PDFParseOutput
-
-pdf_path = Path("/home/oliver/Oliver.Mono/projects/Vision.OPT_MULT/data/full_images/curie.pdf")
 
 class PDFParseController:
 
     def __init__(self):
         pass
 
-    def parse_pdf(self, pdf_path: Path) -> PDFParseOutput:
-        pdf_document = fitz.open(pdf_path)
+    def parse_pdf(self, pdf_document: Document) -> PDFParseOutput:
         page_arrays = []
         for page_num in range(pdf_document.page_count):
             page = pdf_document[page_num]

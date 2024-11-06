@@ -19,6 +19,8 @@ class DetectorController:
         dataframe_list = []
         for preprocess_output in preprocess_output_list:
             dataframe_list.append(self.infer_on_image(preprocess_output))
+        
+        return dataframe_list
     
     def infer_on_image(self, preprocess_output: PreprocessOutput):
         df_cols = ['A', 'B', 'C', 'D']
