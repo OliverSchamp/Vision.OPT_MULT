@@ -39,7 +39,7 @@ class CompareController:
             if all(val1 == val2 for val1, val2 in zip(row1, row2)):
                 consistent_indices.append(idx)
             else:
-                if all(val == " " for val in row1[1:]):
+                if all(val == " " for val in row1):
                     unanswered_indices.append(idx)
                     unanswered_count += 1
                 else:

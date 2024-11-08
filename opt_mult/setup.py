@@ -1,7 +1,7 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="opt_mult",
     # other arguments here,
-    packages=["opt_mult"],
+    packages=find_packages(include=["opt_mult*"]),
 )

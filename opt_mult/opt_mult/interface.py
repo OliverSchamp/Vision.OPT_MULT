@@ -23,6 +23,7 @@ class PreprocessOutput:
     image_with_boxes: np.ndarray
     crop_bboxes: List[Bbox]
     class_midpoints: Dict[int, List[float]]
+    num_vertical_lines: int
 
 class CompareDFOutput(BaseModel):
     correct: int

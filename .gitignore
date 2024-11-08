@@ -1,3 +1,7 @@
 *.pyc
 
 /data/*
+
+/pdfs/*
+
+*.egg-info

@@ -17,9 +17,9 @@ from fitz import Document
 
 from opt_mult.config import default_detector_model
 
+preprocessing_controller = PreprocessingController(150) # threshold at 150 detections to make a line
 compare_controller = CompareController()
 detector_controller = DetectorController(default_detector_model)
-preprocessing_controller = PreprocessingController()
 pdfparse_controller = PDFParseController()
 
 def full_pipeline(pdf_file: Document, ms_pdf_file: Document):
@@ -34,7 +34,7 @@ def full_pipeline(pdf_file: Document, ms_pdf_file: Document):
 
     st.title("Markscheme progress")
     pdfparse_output_ms = pdfparse_controller.parse_pdf(ms_pdf_file)
-    visualise_pdfparse_output(pdfparse_output, "Markscheme sheet")
+    visualise_pdfparse_output(pdfparse_output_ms, "Markscheme sheet")
     preprocessing_output_ms = preprocessing_controller.preprocess_images(pdfparse_output_ms)
     visualise_lines_and_bboxes_output(preprocessing_output_ms)
     detector_output_ms = detector_controller.infer_on_images(preprocessing_output_ms)
@@ -45,7 +45,7 @@ def full_pipeline(pdf_file: Document, ms_pdf_file: Document):
     print_results(compare_df_output)
 
 # Title of the web app
-st.title('File Upload Streamlit App')
+st.title('Automatic Multiple Choice Marker')
 
 # File uploader widget
 markscheme_file = st.file_uploader("Choose a markscheme file to upload", type=["pdf"])

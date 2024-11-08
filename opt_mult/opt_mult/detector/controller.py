@@ -10,10 +10,6 @@ class DetectorController:
 
     def __init__(self, detector_path: Path):
         self.detector = load_object_detector(detector_path)
-
-        self.cropped_image_save_path = Path("/home/oliver/Oliver.Mono/projects/Vision.OPT_MULT/data/cropped_data/images")
-
-        self.image_path = Path("/home/oliver/Oliver.Mono/projects/Vision.OPT_MULT/data/full_images/curie_2.jpg")
     
     def infer_on_images(self, preprocess_output_list: List[PreprocessOutput]) -> List[pd.DataFrame]:
         dataframe_list = []
@@ -23,12 +19,10 @@ class DetectorController:
         return dataframe_list
     
     def infer_on_image(self, preprocess_output: PreprocessOutput):
-        df_cols = ['A', 'B', 'C', 'D']
+        df_cols = [chr(ord('A') + i) for i in range(preprocess_output.num_vertical_lines - 2)]
         df = pd.DataFrame(columns=df_cols)
         
         label_box = True
-        image_image_folder = self.cropped_image_save_path / self.image_path.stem
-        image_image_folder.mkdir(parents=True, exist_ok=True)
         for i, bbox in enumerate(preprocess_output.crop_bboxes):
             bbox_cropped_image = preprocess_output.image[int(bbox.ytl):int(bbox.ybr), int(bbox.xtl):int(bbox.xbr)]
             if label_box is True:
@@ -36,11 +30,20 @@ class DetectorController:
                 continue
 
             centres_for_answers = {mid:cls for mid, cls in zip(preprocess_output.class_midpoints[i], df_cols)}
-            new_row = {'A': " ", 'B': " ", 'C': " ", 'D': " "}
+            new_row = {col_value: " " for col_value in df_cols}
             detections = self.detector.infer_parsed(bbox_cropped_image)
+            has_question_number = False
             for detection in detections:
-                if detection.conf < 0.7:
+                if detection.label == "question_number" and detection.mid.x < 200:
+                    has_question_number = True
+            
+            if not has_question_number:
+                continue
+
+            for detection in detections:
+                if detection.conf < 0.63 or detection.label != "answer":
                     continue
+
                 centre_x = detection.mid.x
                 diff = np.Inf
                 for answer_x in centres_for_answers:
