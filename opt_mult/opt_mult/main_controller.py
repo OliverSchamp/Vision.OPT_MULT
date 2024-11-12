@@ -10,39 +10,39 @@ from opt_mult.interface import PDFParseOutput, PreprocessOutput, CompareDFOutput
 from PIL import Image
 
 import streamlit as st
-from pathlib import Path
 
 import fitz
 from fitz import Document
 
-from opt_mult.config import default_detector_model
-
 preprocessing_controller = PreprocessingController(150) # threshold at 150 detections to make a line
 compare_controller = CompareController()
-detector_controller = DetectorController(default_detector_model)
+detector_controller = DetectorController()
 pdfparse_controller = PDFParseController()
 
 def full_pipeline(pdf_file: Document, ms_pdf_file: Document):
-    st.title("Answer sheet process")
-    pdfparse_output = pdfparse_controller.parse_pdf(pdf_file)
-    print(len(pdfparse_output.pdf_images))
-    visualise_pdfparse_output(pdfparse_output, "Answer sheet")
-    preprocessing_output = preprocessing_controller.preprocess_images(pdfparse_output)
-    visualise_lines_and_bboxes_output(preprocessing_output)
-    detector_output_ans = detector_controller.infer_on_images(preprocessing_output)
-    visualise_detector_output(detector_output_ans)
-
     st.title("Markscheme progress")
     pdfparse_output_ms = pdfparse_controller.parse_pdf(ms_pdf_file)
+    pdfparse_output_ms = pdfparse_output_ms.answer_sheets[0]
     visualise_pdfparse_output(pdfparse_output_ms, "Markscheme sheet")
     preprocessing_output_ms = preprocessing_controller.preprocess_images(pdfparse_output_ms)
     visualise_lines_and_bboxes_output(preprocessing_output_ms)
     detector_output_ms = detector_controller.infer_on_images(preprocessing_output_ms)
     visualise_detector_output(detector_output_ms)
 
-    st.title("Comparison and final mark")
-    compare_df_output = compare_controller.compare_to_ms(detector_output_ms, detector_output_ans)
-    print_results(compare_df_output)
+    count = 0
+    pdfparse_output = pdfparse_controller.parse_pdf(pdf_file)
+    for single_paper_pdf in pdfparse_output.answer_sheets:
+        count += 1
+        st.title(f"Answer sheet process {count}")
+        visualise_pdfparse_output(single_paper_pdf, "Answer sheet")
+        preprocessing_output = preprocessing_controller.preprocess_images(single_paper_pdf)
+        visualise_lines_and_bboxes_output(preprocessing_output)
+        detector_output_ans = detector_controller.infer_on_images(preprocessing_output)
+        visualise_detector_output(detector_output_ans)
+
+        st.title("Comparison and final mark")
+        compare_df_output = compare_controller.compare_to_ms(detector_output_ms, detector_output_ans)
+        print_results(compare_df_output)
 
 # Title of the web app
 st.title('Automatic Multiple Choice Marker')

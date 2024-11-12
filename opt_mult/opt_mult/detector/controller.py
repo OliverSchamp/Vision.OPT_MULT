@@ -1,15 +1,15 @@
 from ..interface import PreprocessOutput
+from ..config import default_detector_model, default_number_character_detector_model
 from typing import List
 import pandas as pd
-from pathlib import Path
 import numpy as np
 
 from olv_object_detection import load_object_detector
 
 class DetectorController:
 
-    def __init__(self, detector_path: Path):
-        self.detector = load_object_detector(detector_path)
+    def __init__(self):
+        self.detector = load_object_detector(default_detector_model)
     
     def infer_on_images(self, preprocess_output_list: List[PreprocessOutput]) -> List[pd.DataFrame]:
         dataframe_list = []

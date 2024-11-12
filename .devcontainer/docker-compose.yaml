@@ -9,14 +9,5 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     ports:
-      - "8051:8051"
-    ipc: host
-    runtime: nvidia  # Explicitly specify the nvidia runtime
+      - "8501:8501"
     restart: always
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]

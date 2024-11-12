@@ -13,8 +13,12 @@ class MarkingResult(BaseModel):
     unanswered_idxs: List[int]
 
 @dataclass
-class PDFParseOutput:
+class ParsedSingleAnswerSheet:
     pdf_images: List[np.ndarray]
+
+@dataclass
+class PDFParseOutput:
+    answer_sheets: List[ParsedSingleAnswerSheet]
 
 @dataclass
 class PreprocessOutput:
