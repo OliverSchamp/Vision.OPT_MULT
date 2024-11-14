@@ -3,6 +3,7 @@ from typing import List, Dict
 from dataclasses import dataclass
 import numpy as np
 from olv_primitives import Bbox
+import pandas as pd
 
 class MarkingResult(BaseModel):
     correct: int
@@ -28,6 +29,14 @@ class PreprocessOutput:
     crop_bboxes: List[Bbox]
     class_midpoints: Dict[int, List[float]]
     num_vertical_lines: int
+
+@dataclass
+class DetectorOutput:
+    dataframes: List[pd.DataFrame]
+    images: List[np.ndarray]
+    crop_bboxes_list: List[List[Bbox]]
+    detections_per_bboxidx: List[Dict[int, List[Bbox]]]
+    centres_for_answers_list: List[Dict[str, float]]
 
 class CompareDFOutput(BaseModel):
     correct: int

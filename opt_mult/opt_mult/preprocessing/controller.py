@@ -3,8 +3,7 @@
 from ..interface import PDFParseOutput, PreprocessOutput
 import cv2
 import numpy as np
-import easyocr
-from typing import List, Tuple, Dict
+from typing import List
 from ..do_lines_intersect import do_lines_intersect
 from .intersection import find_intersections
 from olv_draw import draw_bbs, DrawParameters
@@ -36,14 +35,9 @@ class PreprocessingController:
 
         img_cropped = numpy_image[200:-200, 100:-100]
 
-        # reader = easyocr.Reader(['en'])  # 'en' is for English; you can add more languages
-
-        # results: List[Tuple[List[List[int]], str, float]] = reader.readtext(img_cropped)
-
         number_detections = self.number_column_detector.infer_parsed(img_cropped, conf_thres=0.1)
 
         ocr_box_lines = []
-        no_ocr_box_y_coords = []
         for number_bbox in number_detections:
             bbox_as_array = number_bbox.as_array()
             for i in range(len(bbox_as_array)):
@@ -53,7 +47,6 @@ class PreprocessingController:
         edges = cv2.Canny(image, 50, 150, apertureSize=3)
         lines = cv2.HoughLines(edges,1,np.pi/180,self.detection_threshold, None, 0, 0)
 
-        # remove all lines that cross through more than 4 ocr box lines
         h, w = image.shape[:2]
 
         vertical_thetas = []
@@ -68,10 +61,8 @@ class PreprocessingController:
             if vertical_thetas[i] > np.pi/2:
                 vertical_thetas[i] -= np.pi
 
-        # find the median values and remove outliers
         horizontal_thetas.sort()
         horizontal_theta = horizontal_thetas[len(horizontal_thetas)//2]
-
         vertical_theta = horizontal_theta - np.pi/2
 
         indices_to_delete = []
@@ -139,8 +130,6 @@ class PreprocessingController:
             y2 = int(y0 - 2*h*(a))
 
             filtered_lines_cartesian.append([x1, y1, x2, y2])
-        
-        # find each bounding box and crop the image
 
         # split into vertical and horizontal lines #####
         vertical_lines = []
