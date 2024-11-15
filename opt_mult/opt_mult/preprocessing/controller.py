@@ -1,5 +1,7 @@
 # where all the image preprocessing goes
 
+import math
+import statistics
 from ..interface import PDFParseOutput, PreprocessOutput
 import cv2
 import numpy as np
@@ -9,6 +11,7 @@ from .intersection import find_intersections
 from olv_draw import draw_bbs, DrawParameters
 from PIL import Image, ImageDraw
 from ..config import default_number_character_detector_model
+import streamlit as st
 
 from olv_object_detection.load import load_object_detector
 
@@ -29,12 +32,63 @@ class PreprocessingController:
 
     def avg_x(self, vertical_line: List[float]):
         return (vertical_line[0] + vertical_line[2])/2
+    
+    def rotatedRectWithMaxArea(self, w, h, angle):
+        """
+        Given a rectangle of size wxh that has been rotated by 'angle' (in
+        radians), computes the width and height of the largest possible
+        axis-aligned rectangle (maximal area) within the rotated rectangle.
+        """
+        if w <= 0 or h <= 0:
+            return 0,0
 
-    def preprocess_image(self, numpy_image: np.ndarray, to_filter: bool = True):
-        numpy_image = cv2.cvtColor(numpy_image, cv2.COLOR_BGR2GRAY)
+        width_is_longer = w >= h
+        side_long, side_short = (w,h) if width_is_longer else (h,w)
 
-        img_cropped = numpy_image[200:-200, 100:-100]
+        # since the solutions for angle, -angle and 180-angle are all the same,
+        # if suffices to look at the first quadrant and the absolute values of sin,cos:
+        sin_a, cos_a = abs(math.sin(angle)), abs(math.cos(angle))
+        if side_short <= 2.*sin_a*cos_a*side_long or abs(sin_a-cos_a) < 1e-10:
+            # half constrained case: two crop corners touch the longer side,
+            #   the other two corners are on the mid-line parallel to the longer line
+            x = 0.5*side_short
+            wr,hr = (x/sin_a,x/cos_a) if width_is_longer else (x/cos_a,x/sin_a)
+        else:
+            # fully constrained case: crop touches all 4 sides
+            cos_2a = cos_a*cos_a - sin_a*sin_a
+            wr,hr = (w*cos_a - h*sin_a)/cos_2a, (h*cos_a - w*sin_a)/cos_2a
 
+        return wr,hr
+
+    def remove_black_outline(self, w_original, h_original, angle, img_rotated):
+        wr, hr = self.rotatedRectWithMaxArea(w_original, h_original, angle*np.pi/180)
+        h, w = img_rotated.shape[:2]
+
+        x1 = int((w-wr)/2)
+        x2 = int(x1 + wr)
+        y1 = int((h-hr)/2)
+        y2 = int(y1 + hr)
+        return img_rotated[y1:y2, x1:x2]
+
+    def rotate_image(self, image, angle):
+        (height, width) = image.shape[:2]
+        (cent_x, cent_y) = (width // 2, height // 2)
+
+        mat = cv2.getRotationMatrix2D((cent_x, cent_y), -angle, 1.0)
+        cos = np.abs(mat[0, 0])
+        sin = np.abs(mat[0, 1])
+
+        n_width = int((height * sin) + (width * cos))
+        n_height = int((height * cos) + (width * sin))
+
+        mat[0, 2] += (n_width / 2) - cent_x
+        mat[1, 2] += (n_height / 2) - cent_y
+
+        rotated_image = cv2.warpAffine(image, mat, (n_width, n_height))
+
+        return self.remove_black_outline(width, height, angle, rotated_image)
+    
+    def get_grid_lines(self, img_cropped):
         number_detections = self.number_column_detector.infer_parsed(img_cropped, conf_thres=0.1)
 
         ocr_box_lines = []
@@ -42,12 +96,11 @@ class PreprocessingController:
             bbox_as_array = number_bbox.as_array()
             for i in range(len(bbox_as_array)):
                 ocr_box_lines.append([bbox_as_array[i%4], bbox_as_array[(i+1)%4]])
-                
+        
         image = cv2.GaussianBlur(img_cropped, (5, 5), 0)
         edges = cv2.Canny(image, 50, 150, apertureSize=3)
         lines = cv2.HoughLines(edges,1,np.pi/180,self.detection_threshold, None, 0, 0)
-
-        h, w = image.shape[:2]
+        image = img_cropped # return to normal without blur
 
         vertical_thetas = []
         horizontal_thetas = []
@@ -61,9 +114,32 @@ class PreprocessingController:
             if vertical_thetas[i] > np.pi/2:
                 vertical_thetas[i] -= np.pi
 
-        horizontal_thetas.sort()
-        horizontal_theta = horizontal_thetas[len(horizontal_thetas)//2]
+        horizontal_theta = statistics.median(horizontal_thetas)
+        if round(statistics.mode(horizontal_thetas), 5) == round(np.pi / 2, 5) and statistics.median(horizontal_thetas) != statistics.mode(horizontal_thetas):
+            st.write("Overriding with mode")
+            horizontal_theta = np.pi / 2
+        
+        horizontal_theta = np.pi / 2 # NOTE: only for with scans
         vertical_theta = horizontal_theta - np.pi/2
+
+        return horizontal_theta, vertical_theta, lines, ocr_box_lines
+
+    def preprocess_image(self, numpy_image: np.ndarray, to_filter: bool = True):
+        numpy_image = cv2.cvtColor(numpy_image, cv2.COLOR_BGR2GRAY)
+
+        x_b = int((210/1760) * numpy_image.shape[1])
+        y_b = int((100/2560) * numpy_image.shape[0])
+        image = numpy_image[x_b:-x_b, y_b:-y_b]
+        h, w = image.shape[:2]
+
+        horizontal_theta, vertical_theta, lines, ocr_box_lines = self.get_grid_lines(image)
+
+        if horizontal_theta != np.pi/2:
+            angle_to_rotate = 90-(horizontal_theta*(180/np.pi))
+            if abs(angle_to_rotate) > 1e-5:
+                st.write(f"Rotating image by {angle_to_rotate} degrees")
+                image = self.rotate_image(image, 90-(horizontal_theta*(180/np.pi)))
+                horizontal_theta, vertical_theta, lines, ocr_box_lines = self.get_grid_lines(image)
 
         indices_to_delete = []
         for i in range(lines.shape[0]):
@@ -72,6 +148,7 @@ class PreprocessingController:
 
         lines = np.delete(lines, indices_to_delete, axis=0)
 
+        to_filter = True
         if to_filter:
             rho_threshold = 40
             theta_threshold = 0.7
@@ -164,7 +241,6 @@ class PreprocessingController:
         # clean any vertical lines that dont match the grid
         vertical_line_spacing = [self.avg_x(vertical_lines[1:][i+1]) - self.avg_x(vertical_lines[1:][i]) for i in range(len(vertical_lines[1:])-1)]
         vertical_line_spacing.sort()
-        vertical_line_median = vertical_line_spacing[len(vertical_lines[1:]) // 2]
         vertical_line_max = max(vertical_line_spacing)
         
         new_vertical_lines = [vertical_lines[1]]

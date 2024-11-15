@@ -15,7 +15,7 @@ from fitz import Document
 
 def initialise_heavy_classes():
     if "preprocessing_controller" not in st.session_state:
-        st.session_state["preprocessing_controller"] = PreprocessingController(150) # threshold at 150 detections to make a line
+        st.session_state["preprocessing_controller"] = PreprocessingController(130) # threshold at 150 detections to make a line
     if "compare_controller" not in st.session_state:
         st.session_state["compare_controller"] = CompareController()
     if "detector_controller" not in st.session_state:
