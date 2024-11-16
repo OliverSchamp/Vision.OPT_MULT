@@ -90,7 +90,6 @@ class PreprocessingController:
     
     def get_grid_lines(self, img_cropped):
         number_detections = self.number_column_detector.infer_parsed(img_cropped, conf_thres=0.1)
-
         ocr_box_lines = []
         for number_bbox in number_detections:
             bbox_as_array = number_bbox.as_array()
@@ -247,7 +246,7 @@ class PreprocessingController:
         for i in range(len(vertical_lines[1:])):
             predicted_xloc = new_vertical_lines[-1][0] + vertical_line_max
             for vertical_line in vertical_lines:
-                if abs(self.avg_x(vertical_line) - predicted_xloc) < vertical_line_max/4:
+                if abs(self.avg_x(vertical_line) - predicted_xloc) < vertical_line_max/5:
                     new_vertical_lines.append(vertical_line)
                     break
 
