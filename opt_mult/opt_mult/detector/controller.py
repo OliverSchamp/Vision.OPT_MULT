@@ -40,16 +40,19 @@ class DetectorController:
             centres_for_answers = {mid:cls for mid, cls in zip(preprocess_output.class_midpoints[i], df_cols)}
             new_row = {col_value: " " for col_value in df_cols}
             detections = self.detector.infer_parsed(bbox_cropped_image)
-            detections_per_bbox_crop[i] = [detection for detection in detections if detection.conf >= conf_thresh]
+            qnum_detections = [detection for detection in detections if detection.conf >= 0.7 and detection.label == "question_number"]
+            answer_detections = [detection for detection in detections if detection.conf >= conf_thresh and detection.label == "answer"]
+
+            detections_per_bbox_crop[i] = qnum_detections + answer_detections
             has_question_number = False
-            for detection in detections:
-                if detection.label == "question_number" and detection.mid.x < 200:
+            for detection in detections_per_bbox_crop[i]:
+                if detection.label == "question_number":
                     has_question_number = True
             
             if not has_question_number:
                 continue
 
-            for detection in detections:
+            for detection in detections_per_bbox_crop[i]:
                 if detection.conf < conf_thresh or detection.label != "answer":
                     continue
 
