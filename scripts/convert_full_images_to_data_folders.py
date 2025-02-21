@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import easyocr
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 from do_lines_intersect import do_lines_intersect
 from pathlib import Path
 from olv_primitives import Bbox

@@ -7,4 +7,4 @@ models_path = Path("/home/oliver/Oliver.Mono/projects/Vision.OPT_MULT/data/full_
 annotations_path = dataset_path / "annotations.json"
 images_path = dataset_path / "images"
 
-train(coco_path=dataset_path, save_dir=models_path, epochs=500, image_size=1280, batch_size=2)
+train(coco_path=dataset_path, save_dir=models_path, epochs=2, image_size=1280, batch_size=2)

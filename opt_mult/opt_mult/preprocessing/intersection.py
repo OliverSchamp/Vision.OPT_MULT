@@ -1,8 +1,8 @@
 from collections import defaultdict
-from typing import List
+from typing import List, Optional, Tuple
 from olv_primitives import Bbox
 
-def line_intersection(line1, line2):
+def line_intersection(line1: List[float], line2: List[float]) -> Optional[Tuple[float, float]]:
 
     x1, y1, x2, y2 = line1
     x3, y3, x4, y4 = line2

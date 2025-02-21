@@ -5,7 +5,7 @@ import statistics
 from ..interface import PDFParseOutput, PreprocessOutput
 import cv2
 import numpy as np
-from typing import List
+from typing import List, Tuple
 from ..do_lines_intersect import do_lines_intersect
 from .intersection import find_intersections
 from olv_draw import draw_bbs, DrawParameters
@@ -32,6 +32,8 @@ class PreprocessingController:
 
     def avg_x(self, vertical_line: List[float]):
         return (vertical_line[0] + vertical_line[2])/2
+    
+    ###### ROTATING IMAGES: Not used in final ######
     
     def rotatedRectWithMaxArea(self, w, h, angle):
         """
@@ -88,9 +90,11 @@ class PreprocessingController:
 
         return self.remove_black_outline(width, height, angle, rotated_image)
     
-    def get_grid_lines(self, img_cropped):
+    ##############################################################################
+
+    def get_grid_lines(self, img_cropped: np.ndarray) -> Tuple[float, float, np.ndarray, List[List[List[float, float]]]]:
         number_detections = self.number_column_detector.infer_parsed(img_cropped, conf_thres=0.1)
-        ocr_box_lines = []
+        ocr_box_lines: List[List[List[float, float]]] = []
         for number_bbox in number_detections:
             bbox_as_array = number_bbox.as_array()
             for i in range(len(bbox_as_array)):
@@ -101,29 +105,34 @@ class PreprocessingController:
         lines = cv2.HoughLines(edges,1,np.pi/180,self.detection_threshold, None, 0, 0)
         image = img_cropped # return to normal without blur
 
-        vertical_thetas = []
-        horizontal_thetas = []
+        vertical_thetas: List[float] = []
+        horizontal_thetas: List[float] = []
         for i in range(lines.shape[0]):
             if lines[i][0][1] > np.pi/4 and lines[i][0][1] < (3*np.pi)/4:
                 horizontal_thetas.append(lines[i][0][1])
             else:
                 vertical_thetas.append(lines[i][0][1])
 
+        # centre around 0 radians
         for i in range(len(vertical_thetas)):
             if vertical_thetas[i] > np.pi/2:
                 vertical_thetas[i] -= np.pi
 
+        # calculating the most likely angle for the horizontal grid lines
         horizontal_theta = statistics.median(horizontal_thetas)
         if round(statistics.mode(horizontal_thetas), 5) == round(np.pi / 2, 5) and statistics.median(horizontal_thetas) != statistics.mode(horizontal_thetas):
             st.write("Overriding with mode")
             horizontal_theta = np.pi / 2
         
-        horizontal_theta = np.pi / 2 # NOTE: only for with scans
+        horizontal_theta = np.pi / 2 # NOTE: only for with scans. Here we assume a horizontal line angle of 90 degrees.
         vertical_theta = horizontal_theta - np.pi/2
 
         return horizontal_theta, vertical_theta, lines, ocr_box_lines
 
-    def preprocess_image(self, numpy_image: np.ndarray, to_filter: bool = True):
+    def preprocess_image(self, numpy_image: np.ndarray, to_filter: bool = True) -> PreprocessOutput:
+        """
+        Function that filters out all the unneeded hough lines until we only have hough lines that we want to crop the image with, as input to the detector.
+        """
         numpy_image = cv2.cvtColor(numpy_image, cv2.COLOR_BGR2GRAY)
 
         x_b = int((210/1760) * numpy_image.shape[1])
@@ -268,7 +277,7 @@ class PreprocessingController:
         image_canvas = ImageDraw.Draw(image_pil)
         draw_parameters = DrawParameters(fill_color=None)
 
-        draw_bbs(image_canvas, crop_bboxes, draw_parameters)
+        draw_bbs(image_canvas, crop_bboxes, draw_parameters) # draws the bounding boxes that will be cropped out of the grid to go into the detector.
 
         return PreprocessOutput(image=image_rgb, image_with_boxes=np.array(image_pil), image_with_lines=image_with_lines, crop_bboxes=crop_bboxes, class_midpoints=class_midpoints, num_vertical_lines=num_vertical_lines)
 

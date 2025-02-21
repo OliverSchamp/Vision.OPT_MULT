@@ -3,8 +3,8 @@ from ..config import default_detector_model, conf_thresh
 from typing import List, Dict, Tuple
 import pandas as pd
 import numpy as np
-from olv_primitives import Bbox
 
+from olv_primitives import Bbox
 from olv_object_detection import load_object_detector
 
 class DetectorController:

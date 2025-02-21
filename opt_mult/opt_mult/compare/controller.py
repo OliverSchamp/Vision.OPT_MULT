@@ -1,6 +1,6 @@
 # where the comparison between markscheme and 
 import pandas as pd
-from typing import List
+from typing import Any, Dict, List
 from ..interface import CompareDFOutput
 
 class CompareController:
@@ -25,7 +25,7 @@ class CompareController:
 
 
 
-    def compare_answers(self, df1, df2):
+    def compare_answers(self, df1: pd.DataFrame, df2: pd.DataFrame) -> Dict[str, Any]:
         if df1.shape != df2.shape:
             raise ValueError(f"DataFrames must have the same shape {df1.shape} {df2.shape}")
 
