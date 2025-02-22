@@ -92,9 +92,9 @@ class PreprocessingController:
     
     ##############################################################################
 
-    def get_grid_lines(self, img_cropped: np.ndarray) -> Tuple[float, float, np.ndarray, List[List[List[float, float]]]]:
+    def get_grid_lines(self, img_cropped: np.ndarray) -> Tuple[float, float, np.ndarray, List[List[List[float]]]]:
         number_detections = self.number_column_detector.infer_parsed(img_cropped, conf_thres=0.1)
-        ocr_box_lines: List[List[List[float, float]]] = []
+        ocr_box_lines: List[List[List[float]]] = []
         for number_bbox in number_detections:
             bbox_as_array = number_bbox.as_array()
             for i in range(len(bbox_as_array)):
