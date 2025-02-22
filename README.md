@@ -1,10 +1,10 @@
 # Vision.OPT_MULT
 
-Project for automatically marking multiple choice questionnaires. This was used in the Royal Society of Chemistry `Top of the Bench' competition for the multiple choice papers. 
+Project for automatically marking multiple choice questionnaires. This was used in the Royal Society of Chemistry 'Top of the Bench' competition for the multiple choice papers. 
 
 ## Method
 
-The docker container executes a simple stream
+The docker container executes a script `main_controller.py` which starts a streamlit application.
  
 The code executes as follows:
  - Detect all vertical and horizontal gridlines (using hough transform)
