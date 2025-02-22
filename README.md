@@ -2,8 +2,6 @@
 
 Project for automatically marking multiple choice questionnaires. This was used in the Royal Society of Chemistry `Top of the Bench' competition for the multiple choice papers. 
 
-This code needs some custom classes
-
 ## Method
 
 The docker container executes a simple stream
@@ -33,4 +31,9 @@ This is an example image of a marked scan.
 
 ## Dockerfile
 
-The dockerfile included was for CPU only so I could run it on my laptop.
+The dockerfile included was for CPU only so I could run it on my laptop. 
+The models were trained on a GPU. 
+
+### Note 
+
+This code needs some extra custom classes to train and load AI models. 
